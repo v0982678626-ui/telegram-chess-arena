@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Arena</title>
+    <link rel="stylesheet" href="/styles.css?v=17" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow" data-i18n="brand">Telegram Chess</p>
+          <h1>Arena</h1>
+        </div>
+        <div class="player-pill">
+          <span id="playerName" data-i18n="player">Player</span>
+          <strong id="playerRating">1200</strong>
+        </div>
+      </section>
+
+      <section class="layout">
+        <aside class="panel controls setup-screen">
+          <div class="mode-grid">
+            <button class="mode-card active" id="botMode" type="button">
+              <span data-i18n="computer">Computer</span>
+              <strong data-i18n="quickGame">Quick game</strong>
+            </button>
+            <button class="mode-card" id="onlineMode" type="button">
+              <span data-i18n="online">Online</span>
+              <strong data-i18n="findPlayer">Find player</strong>
+            </button>
+            <button class="mode-card" id="challengeMode" type="button">
+              <span data-i18n="friend">Friend</span>
+              <strong data-i18n="sendInvite">Send invite</strong>
+            </button>
+          </div>
+
+          <label class="control-field" id="botRatingField">
+            <span data-i18n="botRating">Bot rating</span>
+            <div class="range-control">
+              <input id="botRatingInput" type="range" min="200" max="3000" step="100" value="1200" />
+              <strong id="botRatingValue">1200</strong>
+            </div>
+          </label>
+
+          <label class="control-field">
+            <span data-i18n="playAs">Play as</span>
+            <select id="colorChoiceSelect">
+              <option value="w" data-i18n="white">White</option>
+              <option value="b" data-i18n="black">Black</option>
+              <option value="random" data-i18n="random">Random</option>
+            </select>
+          </label>
+
+          <label class="control-field">
+            <span data-i18n="time">Time</span>
+            <select id="timeControlSelect">
+              <option value="casual" data-i18n="noClock">No clock</option>
+              <option value="bullet">1+0 Bullet</option>
+              <option value="blitz">3+2 Blitz</option>
+              <option value="rapid">10+0 Rapid</option>
+              <option value="classical">15+10 Classical</option>
+            </select>
+          </label>
+
+          <div class="action-row">
+            <button class="primary-action" id="playButton" type="button" data-i18n="startGame">Start game</button>
+            <button class="secondary-action" id="resignButton" type="button" disabled data-i18n="resign">Resign</button>
+          </div>
+          <p class="status" id="statusText" data-i18n="chooseMode">Choose a mode and start a game.</p>
+
+          <div class="invite-panel" id="invitePanel" hidden>
+            <label class="control-field">
+              <span data-i18n="notifyPlayer">Notify player</span>
+              <select id="friendSelect">
+                <option value="" data-i18n="shareManual">Share link manually</option>
+              </select>
+            </label>
+            <div class="invite-link" id="inviteLink" hidden>
+              <input id="inviteUrl" type="text" readonly />
+              <button class="secondary-action" id="copyInviteButton" type="button" data-i18n="copy">Copy</button>
+              <button class="secondary-action" id="shareInviteButton" type="button" data-i18n="share">Share</button>
+            </div>
+          </div>
+
+          <div class="players">
+            <div>
+              <span data-i18n="white">White</span>
+              <strong id="whiteName">-</strong>
+            </div>
+            <div>
+              <span data-i18n="black">Black</span>
+              <strong id="blackName">-</strong>
+            </div>
+          </div>
+        </aside>
+
+        <section class="board-wrap game-screen">
+          <div class="game-toolbar">
+            <button class="secondary-action icon-action" id="backToSetupButton" type="button" data-i18n="menu">Menu</button>
+            <strong id="gameModeTitle" data-i18n="game">Game</strong>
+            <span id="timeControlLabel" data-i18n="noClock">No clock</span>
+          </div>
+          <div class="result-banner" id="resultBanner" hidden>
+            <strong id="resultTitle" data-i18n="gameOver">Game over</strong>
+            <span id="resultDetails"></span>
+          </div>
+          <div class="player-strip top-player" id="topPlayer">
+            <div>
+              <span id="topPlayerColor">Black</span>
+              <strong id="topPlayerName">Computer - 1200</strong>
+            </div>
+            <time class="clock" id="topClock">--:--</time>
+            <small class="captured" id="topCaptured"></small>
+          </div>
+          <div class="board-meta">
+            <span id="turnText" data-i18n="whiteToMove">White to move</span>
+            <span id="gameResult"></span>
+          </div>
+          <div class="board" id="board" aria-label="Chess board"></div>
+          <div class="player-strip bottom-player" id="bottomPlayer">
+            <div>
+              <span id="bottomPlayerColor">White</span>
+              <strong id="bottomPlayerName">Player - 1200</strong>
+            </div>
+            <time class="clock" id="bottomClock">--:--</time>
+            <small class="captured" id="bottomCaptured"></small>
+          </div>
+        </section>
+
+        <aside class="panel side">
+          <div class="tabs">
+            <button class="tab active" data-tab="moves" type="button" data-i18n="moves">Moves</button>
+            <button class="tab" data-tab="rating" type="button" data-i18n="rating">Rating</button>
+            <button class="tab" data-tab="friends" type="button" data-i18n="myFriends">Friends</button>
+            <button class="tab" data-tab="settings" type="button" data-i18n="style">Style</button>
+          </div>
+
+          <div class="tab-view active" id="movesView">
+            <ol class="move-list" id="moveList"></ol>
+          </div>
+
+          <div class="tab-view" id="ratingView">
+            <div class="leaderboard" id="leaderboard"></div>
+          </div>
+
+          <div class="tab-view" id="friendsView">
+            <div class="friends-list" id="friendsList"></div>
+          </div>
+
+          <div class="tab-view" id="settingsView">
+            <div class="settings-panel">
+              <label>
+                <span data-i18n="language">Language</span>
+                <select id="languageSelect">
+                  <option value="ru">Русский</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+
+              <label>
+                <span data-i18n="boardTheme">Board theme</span>
+                <select id="boardThemeSelect">
+                  <option value="classic" data-i18n="classicGreen">Classic green</option>
+                  <option value="wood" data-i18n="wood">Wood</option>
+                  <option value="ocean" data-i18n="ocean">Ocean</option>
+                  <option value="violet" data-i18n="violet">Violet</option>
+                </select>
+              </label>
+
+              <label>
+                <span data-i18n="pieces">Pieces</span>
+                <select id="pieceStyleSelect">
+                  <option value="chess" data-i18n="chessClean">Chess clean</option>
+                  <option value="classic" data-i18n="classic">Classic</option>
+                  <option value="minimal" data-i18n="minimal">Minimal</option>
+                </select>
+              </label>
+
+              <label class="toggle-row">
+                <span data-i18n="coordinates">Coordinates</span>
+                <input id="coordinatesToggle" type="checkbox" checked />
+              </label>
+
+              <label class="toggle-row">
+                <span data-i18n="moveDots">Move dots</span>
+                <input id="moveDotsToggle" type="checkbox" checked />
+              </label>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <div class="promotion-modal" id="promotionModal" hidden>
+      <div class="promotion-card">
+        <strong data-i18n="choosePromotion">Choose promotion</strong>
+        <div class="promotion-options" id="promotionOptions"></div>
+      </div>
+    </div>
+
+    <script src="/app.js?v=17" type="module"></script>
+  </body>
+</html>

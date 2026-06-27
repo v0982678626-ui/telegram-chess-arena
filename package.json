@@ -1,0 +1,21 @@
+{
+  "name": "telegram-chess-arena",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "telegram:setup": "node scripts/configure-telegram.js"
+  },
+  "dependencies": {
+    "chess.js": "^1.2.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
