@@ -2,7 +2,7 @@ services:
   - type: web
     name: telegram-chess-arena
     env: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -12,12 +12,8 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_PATH
-        value: /var/data/chess.json
+        value: /tmp/chess.json
       - key: BOT_TOKEN
         sync: false
       - key: PUBLIC_URL
         sync: false
-    disk:
-      name: chess-data
-      mountPath: /var/data
-      sizeGB: 1
